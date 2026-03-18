@@ -62,6 +62,52 @@ def starts_with(tokens: list[str], prefix: tuple[str, ...]) -> bool:
     return tuple(tokens[: len(prefix)]) == prefix
 
 
+def is_manual_venv_activation(tokens: list[str]) -> bool:
+    if not tokens:
+        return False
+
+    normalized_tokens = [t.replace("\\", "/").strip().lower() for t in tokens]
+    joined = " ".join(normalized_tokens)
+
+    activation_patterns = [
+        "source .venv/bin/activate",
+        ". .venv/bin/activate",
+        ".venv/bin/activate",
+        "call .venv/scripts/activate",
+        ".venv/scripts/activate",
+        ".venv/scripts/activate.bat",
+        ".venv/scripts/activate.ps1",
+    ]
+
+    if joined in activation_patterns:
+        return True
+
+    if len(tokens) >= 2:
+        first = tokens[0].lower()
+        second = tokens[1].replace("\\", "/").lower()
+
+        if first in {"source", "."} and second == ".venv/bin/activate":
+            return True
+
+        if first == "call" and second in {
+            ".venv/scripts/activate",
+            ".venv/scripts/activate.bat",
+        }:
+            return True
+
+    if len(tokens) == 1:
+        only = tokens[0].replace("\\", "/").lower()
+        if only in {
+            ".venv/bin/activate",
+            ".venv/scripts/activate",
+            ".venv/scripts/activate.bat",
+            ".venv/scripts/activate.ps1",
+        }:
+            return True
+
+    return False
+
+
 def classify_invocation(tokens: list[str]) -> dict[str, Any]:
     if not tokens:
         return {
@@ -87,6 +133,17 @@ def classify_invocation(tokens: list[str]) -> dict[str, Any]:
                 "notes": notes,
             }
 
+    if detect_python_path_invocation(first):
+        rewritten = "uv run " + " ".join(tokens)
+        return {
+            "classification": "direct_python_path",
+            "is_safe": False,
+            "should_rewrite": True,
+            "reason": "direct interpreter path bypasses uv-managed execution",
+            "recommended_rewrite": rewritten,
+            "notes": notes,
+        }
+    
     for pattern in GLOBAL_INSTALL_PATTERNS:
         if starts_with(tokens, pattern):
             if pattern in {("python", "-m", "pip"), ("python3", "-m", "pip")} and len(tokens) >= 4:
@@ -106,15 +163,17 @@ def classify_invocation(tokens: list[str]) -> dict[str, Any]:
                 "recommended_rewrite": rewrite,
                 "notes": notes,
             }
-
-    if detect_python_path_invocation(first):
-        rewritten = "uv run " + " ".join(tokens)
+    
+    if is_manual_venv_activation(tokens):
+        notes.append(
+            "manual activation is allowed only when the user explicitly asks for an interactive shell workflow"
+        )
         return {
-            "classification": "direct_python_path",
+            "classification": "manual_venv_activation",
             "is_safe": False,
             "should_rewrite": True,
-            "reason": "direct interpreter path bypasses uv-managed execution",
-            "recommended_rewrite": rewritten,
+            "reason": "manual activation of .venv is not the preferred workflow for this skill",
+            "recommended_rewrite": "use uv run <command> instead",
             "notes": notes,
         }
 

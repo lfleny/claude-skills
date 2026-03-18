@@ -34,6 +34,28 @@ Default behavior:
 
 Always follow the operating policy in `references/project-conventions.md`.
 
+## Virtual environment activation policy
+
+Do not suggest manual activation of `.venv` as the default next step.
+
+After project initialization or dependency installation, prefer `uv run ...` for:
+- running the app
+- running tests
+- running linters
+- running formatters
+- running migrations
+- running Python scripts
+
+Manual activation of `.venv` is allowed only if:
+- the user explicitly asks to activate the environment
+- the user explicitly wants an interactive shell workflow
+- a non-uv external tool requires an activated shell environment
+
+If activation is not explicitly required, do not propose:
+- `source .venv/bin/activate`
+- `.venv\Scripts\activate`
+- shell-specific activation instructions
+
 ## Required workflow
 
 Before the first project-changing action, inspect the current directory and determine the correct next step.

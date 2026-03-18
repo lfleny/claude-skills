@@ -131,15 +131,23 @@ If dependency state changes:
 - update the project through uv workflows
 - sync the environment through uv workflows
 
-## 11. Do not require manual venv activation for normal agent work
+## 11. Manual virtual environment activation policy
 
-For ordinary agent-driven tasks:
+Do not require or propose manual activation of `.venv` as the default next step for normal agent-driven work.
+
+Preferred pattern:
+- install dependencies with uv
+- run project commands with `uv run ...`
+
+For ordinary project tasks:
 - do not require the user to activate `.venv`
 - do not treat activation as a prerequisite for normal project commands
+- do not suggest activation as the default next step after setup
 
-Prefer commands that work directly through uv.
-
-Manual activation is acceptable only if the user explicitly wants an interactive shell workflow.
+Manual activation is acceptable only if:
+- the user explicitly asks to activate the environment
+- the user explicitly wants an interactive shell workflow
+- a non-uv external tool explicitly requires an activated shell environment
 
 ## 12. Distinguish project dependencies from one-off tools
 

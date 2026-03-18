@@ -159,6 +159,20 @@ If the lockfile is missing or needs refresh:
 - use the uv project workflow
 - do not edit lock-related files manually
 
+## 8A. Is manual virtual environment activation needed?
+
+Default answer:
+- no
+
+If the user wants to run normal project commands:
+- do not suggest manual activation
+- use `uv run <command>`
+
+Only allow manual activation if:
+- the user explicitly asks for it
+- the user explicitly wants an interactive shell session
+- a non-uv external tool explicitly requires an activated environment
+
 ## 9. Is Python version handling needed?
 
 If the version is not pinned or the requested version is unavailable:
